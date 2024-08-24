@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Тестовое задание</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    input, select, textarea {
+      border-radius: 10px;
+    }
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin: 0 auto;
+      max-width: 900px;
+    }
+    .block {
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin: 10px;
+      flex: 0 0 43%;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+    }
+    .block input, .block select, .block textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      box-sizing: border-box;
+    }
+    .flex-row {
+      display: flex;
+      justify-content: space-between;
+    }
+    .flex-row .half-width {
+      width: 48%;
+    }
+    #submit {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-top: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #submit:hover {
+      background-color: #45a049;
+    }
+    .suggestion {
+      background-color: #f1f1f1;
+      border: 1px solid #ddd;
+      border-bottom: none;
+      padding: 10px;
+      cursor: pointer;
+      position: absolute;
+      width: calc(100% - 20px);
+      z-index: 1;
+    }
+    .suggestion:hover {
+      background-color: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <h1>Test</h1>
+  <form id="form">
+    <div class="container">
+      <div class="block">
+        <label>Client Details</label>
+        <div class="flex-row">
+          <div class="half-width">
+            <input type="text" id="first_name" name="first_name" placeholder="First name" required>
+          </div>
+          <div class="half-width">
+            <input type="text" id="last_name" name="last_name" placeholder="Last name" required>
+          </div>
+        </div>
+        <input type="text" id="phone" name="phone" placeholder="Phone" required inputmode="numeric">
+        <input type="email" id="email" name="email" placeholder="Email (optional)">
+      </div>
+
+      <div class="block">
+        <label>Job Detail</label>
+        <div class="flex-row">
+          <div class="half-width">
+            <select id="job_type" name="job_type">
+              <option value="">Select Job Type</option>
+              <option value="call">Call</option>
+              <option value="meeting">Meeting</option>
+              <option value="task">Task</option>
+              <option value="deadline">Deadline</option>
+              <option value="email">Email</option>
+              <option value="lunch">Lunch</option>
+            </select>
+          </div>
+          <div class="half-width">
+            <select id="job_source" name="job_source">
+              <option value="">Select Job Source</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <textarea style="height: 100px;" id="sob_description" name="sob_description" placeholder="Job description (optional)"></textarea>
+      </div>
+
+      <div class="block">
+        <label>Service Location</label>
+        <div class="relative-container">
+          <input type="text" id="address" name="address" placeholder="Address" required>
+          <div id="suggestions-container"></div>
+        </div>
+        <input type="text" id="city" name="city" placeholder="City" required>
+        <input type="text" id="state" name="state" placeholder="State" required>
+        <div class="flex-row">
+          <div class="half-width">
+            <input type="text" id="zip_code" name="zip_code" placeholder="Zip code" required>
+          </div>
+          <div class="half-width">
+            <select id="area" name="area">
+              <option value="">Select Area</option>
+              <option value="north">North</option>
+              <option value="south">South</option>
+              <option value="west">West</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <label>Scheduled</label>
+        <input type="date" id="start_date" name="start_date" required>
+        <div class="flex-row">
+          <div class="half-width">
+            <input type="time" id="start_time" name="start_time" required>
+          </div>
+          <div class="half-width">
+            <input type="time" id="end_time" name="end_time" required>
+          </div>
+        </div>
+        <select id="user" name="user">
+          <option value="">User</option>
+          <option value="robert jones">Robert Jones </option>
+          <option value="richard barrett">Richard Barrett</option>
+          <option value="joseph chapman">Joseph Chapman</option>
+        </select>
+      </div>
+    </div>
+    <button id="submit">Create Job</button>
+  </form>
+
+  <iframe id="iframe" src="" frameborder="0" width="100%" height="500"></iframe>
+
+  <script>
+    // Wait until the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // Format phone number as user types
+        document.getElementById('phone').addEventListener('input', function(event) {
+            let input = event.target.value.replace(/\D/g, ''); // Remove non-numeric characters
+            let formattedInput = '';
+
+            // Format the input as (123) 456-7890
+            if (input.length > 0) {
+                formattedInput = '(' + input.substring(0, 3);
+            }
+            if (input.length >= 4) {
+                formattedInput += ') ' + input.substring(3, 6);
+            }
+            if (input.length >= 7) {
+                formattedInput += '-' + input.substring(6, 10);
+            }
+
+            event.target.value = formattedInput; // Update the phone input field
+        });
+
+        // Handle address input and fetch address suggestions
+        const addressInput = document.getElementById('address');
+
+        addressInput.addEventListener('input', function() {
+            const query = addressInput.value;
+            if (query.length < 2) return; // Only search if the query is at least 2 characters
+
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&addressdetails=1`)
+                .then(response => response.json())
+                .then(data => {
+                    removeSuggestions(); // Remove any existing suggestions
+                    const suggestions = data.map(place => ({
+                        display_name: place.display_name,
+                        address: place.address
+                    })).slice(0, 5); // Get the top 5 suggestions
+                    
+                    if (suggestions.length) {
+                        showSuggestions(suggestions); // Display the suggestions
+                    }
+                });
+        });
+
+        // Remove existing suggestions from the DOM
+        function removeSuggestions() {
+            let existingSuggestions = document.querySelectorAll('.suggestion');
+            existingSuggestions.forEach(suggestion => suggestion.remove());
+        }
+
+        // Display address suggestions in a dropdown list
+        function showSuggestions(suggestions) {
+            suggestions.forEach(suggestion => {
+                const div = document.createElement('div');
+                div.className = 'suggestion';
+                div.textContent = suggestion.display_name;
+                div.addEventListener('click', function() {
+                    addressInput.value = suggestion.display_name; // Set the address input field
+                    updateAddressFields(suggestion.address); // Update other address fields
+                    removeSuggestions(); // Remove suggestions after selection
+                });
+                addressInput.parentNode.appendChild(div);
+            });
+        }
+
+        // Update city, state, and zip code fields based on the selected address
+        function updateAddressFields(address) {
+            document.getElementById('city').value = address.city || address.town || address.village || address.municipality || '';
+            document.getElementById('state').value = address.state || address.region || '';
+            document.getElementById('zip_code').value = address.postcode || address.zip || '';
+        }
+
+        // Handle form submission
+        document.getElementById('form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            if (!validateForm()) {
+                alert('Please fill out all required fields correctly.');
+                return;
+            }
+
+            const formData = {
+                title: "New Job: " + document.getElementById('first_name').value + " " + document.getElementById('last_name').value,
+                value: 0,
+                person_id: null,
+                org_id: null,
+                stage_id: null,
+                custom_fields: {
+                    "1be38a1d0580d371f7ec6841eb5f6d6eaa8a69ec": document.getElementById('address').value,
+                    "8a753024bb745b5b6fccb600ff19c18b5ed961b1": document.getElementById('job_type').value,
+                    "de1d1710cb0b97c34356933ad708af42f2516210": document.getElementById('job_source').value,
+                    "15528ece5d6dfec64008e6a0adfd7ed150bd1bda": document.getElementById('start_date').value,
+                    "d239e744d9d437edac349eed4be993c2afa89076": document.getElementById('start_time').value,
+                    "45817d2cb763642473b50f5a36fa222d843ac643": document.getElementById('end_time').value
+                }
+            };
+
+            console.log('Form data:', formData); // Log the form data for debugging
+
+            // Send the form data to Pipedrive API
+            fetch('https://api.pipedrive.com/v1/deals?api_token=430d130d6f726b768166cdec2a5c5eced9514647', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('API Response:', data); // Log the API response for debugging
+                if (data.success) {
+                    alert('Deal created successfully!');
+                    document.getElementById('iframe').src = "https://yoursite.com/success_page.html"; // Redirect to success page
+                } else {
+                    alert('Failed to create deal: ' + data.error);
+                    document.getElementById('iframe').src = "https://yoursite.com/error_page.html"; // Redirect to error page
+                }
+            })
+            .catch(error => console.error('Error:', error)); // Log any errors
+        });
+
+        // Validate form fields
+        function validateForm() {
+            let isValid = true;
+
+            const requiredFields = [
+                'first_name',
+                'last_name',
+                'phone',
+                'address',
+                'city',
+                'state',
+                'zip_code',
+                'start_date',
+                'start_time',
+                'end_time',
+                'user'
+            ];
+
+            requiredFields.forEach(function(fieldId) {
+                const field = document.getElementById(fieldId);
+                if (field && !field.value) {
+                    isValid = false;
+                    field.style.borderColor = 'red'; // Highlight missing fields
+                } else if (field) {
+                    field.style.borderColor = '';
+                }
+            });
+
+            return isValid; // Return the validation result
+        }
+    });
+</script>
+
+</body>
+</html>
